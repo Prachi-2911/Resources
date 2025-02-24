@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hello World</title>
+    <script type="text/javascript" src="Resources/dynamsoft.webtwain.initiate.js"></script>
+    <script type="text/javascript" src="Resources/dynamsoft.webtwain.config.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            background-color: #f4f4f4;
+            height: 100vh;
+        }
+        #input-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 10px;
+            position: fixed;
+            top: 10px;
+            background-color: #f4f4f4;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+        #scan-button, #cancel-button {
+            width: 200px;
+            height: 35px;
+            font-size: 18px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #scan-button {
+            background-color: #28a745;
+        }
+        #scan-button:hover {
+            background-color: #218838;
+        }
+        #cancel-button {
+            background-color: #dc3545;
+        }
+        #cancel-button:hover {
+            background-color: #c82333;
+        }
+        #dwtcontrolContainer {
+            width: 400px;
+            height: 500px;
+            background-color: white;
+            border: 2px solid #ccc;
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="input-container">
+        <input type="button" id="scan-button" value="Scan" onclick="AcquireImage();" />
+        <input type="button" id="cancel-button" value="Clear" onclick="ResetContainer();" />
+    </div>
+    
+    <div id="dwtcontrolContainer"></div>
+    
+    <script type="text/javascript">
+        var DWTObject;
+        function InitializeDWT() {
+            Dynamsoft.DWT.RegisterEvent("OnWebTwainReady", function () {
+                DWTObject = Dynamsoft.DWT.GetWebTwain('dwtcontrolContainer');
+            });
+        }
+        
+        InitializeDWT();
+
+        function AcquireImage() {
+            if (DWTObject) {
+                DWTObject.SelectSourceAsync()
+                    .then(function(){
+                        return DWTObject.AcquireImageAsync({
+                            IfCloseSourceAfterAcquire: true 
+                        });
+                    })
+                    .then(function() {
+                        DownloadPDF();
+                    })
+                    .catch(function (exp) {
+                        console.error(exp.message);
+                    });
+            }
+        }
+
+        function getQueryParameter(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name) || "";
+        }
+
+        function DownloadPDF() {
+            if (DWTObject) {
+                if (DWTObject.HowManyImagesInBuffer > 0) {
+                    let orderNumber = getQueryParameter("orderNo"); 
+                    let filePath = getQueryParameter("filePath"); 
+                    let fileName = orderNumber;
+                    let fullPath = filePath + fileName;
+
+                    DWTObject.SaveAllAsPDF(fullPath,
+                        function () {
+                            console.log("PDF saved successfully at: " + fullPath);
+                        },
+                        function (errorCode, errorString) {
+                            console.error("Error: " + errorString);
+                        }
+                    );
+                }
+            }
+        }
+
+        function ResetContainer() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>

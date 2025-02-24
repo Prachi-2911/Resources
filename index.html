@@ -99,24 +99,49 @@
         }
 
         function DownloadPDF() {
-            if (DWTObject) {
-                if (DWTObject.HowManyImagesInBuffer > 0) {
-                    let orderNumber = getQueryParameter("orderNo"); 
-                    let filePath = getQueryParameter("filePath"); 
-                    let fileName = orderNumber;
-                    let fullPath = filePath + fileName;
+    if (DWTObject) {
+        if (DWTObject.HowManyImagesInBuffer > 0) {
+            DWTObject.ConvertToBlob([0], Dynamsoft.DWT.EnumDWT_ImageType.IT_PDF, function(blob) {
+                let reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = function() {
+                    let base64data = reader.result.split(',')[1]; // Extract only the Base64 part
+                    alert("Base64 of scanned document:\n" + base64data);
 
-                    DWTObject.SaveAllAsPDF(fullPath,
-                        function () {
-                            console.log("PDF saved successfully at: " + fullPath);
-                        },
-                        function (errorCode, errorString) {
-                            console.error("Error: " + errorString);
-                        }
-                    );
-                }
-            }
+                    // Send Base64 to Business Central
+                    sendBase64ToBC(base64data);
+                };
+            }, function(errorCode, errorString) {
+                console.error("Error converting to Blob: " + errorString);
+            });
         }
+    }
+}
+
+// Function to send Base64 to Business Central
+function sendBase64ToBC(base64data) {
+    let orderNo = getQueryParameter("orderNo");
+
+    fetch("https://your-bc-url.com/ODataV4/Company('YourCompany')/scanAttachments", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Basic " + btoa("username:password")
+        },
+        body: JSON.stringify({
+            OrderNo: orderNo,
+            FileName: orderNo + ".pdf",
+            Base64Text: base64data
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Response from Business Central:", data);
+        alert("Document successfully sent to Business Central.");
+    })
+    .catch(error => console.error("Error sending Base64 to BC:", error));
+}
+
 
         function ResetContainer() {
             location.reload();

@@ -123,31 +123,23 @@ function sendBase64ToBC(base64data) {
     let orderNo = getQueryParameter("orderNo");
 
     fetch("https://api.businesscentral.dynamics.com/v2.0/61c7d9fe-a8cb-4f41-bfb6-64034c73746d/Prachi/ODataV4/Company('CRONUS%20USA%2C%20Inc.')/ScanAttachmentAPI", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Basic " + btoa("username:password")
-    },
-    body: JSON.stringify({
-        OrderNo: orderNo,
-        FileName: orderNo + ".pdf",
-        Base64Text: base64data
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Basic " + btoa("username:password")
+        },
+        body: JSON.stringify({
+            OrderNo: orderNo,
+            FileName: orderNo + ".pdf",
+            Base64Text: base64data
+        })
     })
-})
-.then(response => response.json())  // Convert response to JSON
-.then(data => {
-    console.log("Response from Business Central:", data);
-    if (data.error) {
-        alert("Error: " + data.error.message);
-    } else {
+    .then(response => response.json())
+    .then(data => {
+        console.log("Response from Business Central:", data);
         alert("Document successfully sent to Business Central.");
-    }
-})
-.catch(error => {
-    console.error("Error sending Base64 to BC:", error);
-    alert("Failed to send document. See console for details.");
-});
-
+    })
+    .catch(error => console.error("Error sending Base64 to BC:", error));
 }
 
 

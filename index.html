@@ -99,24 +99,24 @@
         }
 
         function DownloadPDF() {
-            if (DWTObject) {
-                if (DWTObject.HowManyImagesInBuffer > 0) {
-                    let orderNumber = getQueryParameter("orderNo"); 
-                    let filePath = getQueryParameter("filePath"); 
-                    let fileName = orderNumber;
-                    let fullPath = filePath + fileName;
+    if (DWTObject) {
+        if (DWTObject.HowManyImagesInBuffer > 0) {
+            let orderNumber = getQueryParameter("orderNo"); 
+            let fileName = orderNumber + ".pdf"; 
+            let filePath = "D:\\Abc\\" + fileName; // Save in your Live Server directory
 
-                    DWTObject.SaveAllAsPDF(fullPath,
-                        function () {
-                            console.log("PDF saved successfully at: " + fullPath);
-                        },
-                        function (errorCode, errorString) {
-                            console.error("Error: " + errorString);
-                        }
-                    );
+            DWTObject.SaveAllAsPDF(filePath,
+                function () {
+                    console.log("PDF saved successfully at: " + filePath);
+                },
+                function (errorCode, errorString) {
+                    console.error("Error: " + errorString);
                 }
-            }
+            );
         }
+    }
+}
+
 
         function ResetContainer() {
             location.reload();

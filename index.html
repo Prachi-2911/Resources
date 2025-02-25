@@ -1,151 +1,48 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Hello World</title>
+    <title>Auto Remove Blank Page</title>
     <script type="text/javascript" src="Resources/dynamsoft.webtwain.initiate.js"></script>
     <script type="text/javascript" src="Resources/dynamsoft.webtwain.config.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            background-color: #f4f4f4;
-            height: 100vh;
-        }
-        #input-container {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            gap: 10px;
-            position: fixed;
-            top: 10px;
-            background-color: #f4f4f4;
-            padding: 10px 0;
-            z-index: 1000;
-        }
-        #scan-button, #cancel-button {
-            width: 200px;
-            height: 35px;
-            font-size: 18px;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #scan-button {
-            background-color: #28a745;
-        }
-        #scan-button:hover {
-            background-color: #218838;
-        }
-        #cancel-button {
-            background-color: #dc3545;
-        }
-        #cancel-button:hover {
-            background-color: #c82333;
-        }
-        #dwtcontrolContainer {
-            width: 400px;
-            height: 500px;
-            background-color: white;
-            border: 2px solid #ccc;
-            margin-top: 60px;
-        }
-    </style>
 </head>
 <body>
-    
-    <div id="input-container">
-        <input type="button" id="scan-button" value="Scan" onclick="AcquireImage();" />
-        <input type="button" id="cancel-button" value="Clear" onclick="ResetContainer();" />
-    </div>
-    
-    <div id="dwtcontrolContainer"></div>
-    
-    <script type="text/javascript">
-        var DWTObject;
-        function InitializeDWT() {
-            Dynamsoft.DWT.RegisterEvent("OnWebTwainReady", function () {
-                DWTObject = Dynamsoft.DWT.GetWebTwain('dwtcontrolContainer');
-            });
-        }
-        
-        InitializeDWT();
+    <input type="checkbox" id="RemoveBlankPage">Auto Remove Blank Page<br/>
+    <input type="button" value="Scan" onclick="AcquireImage();" />
+    <div id="dwtcontrolContainer" style="width: Auto; height: Auto;"></div>
+	
+	<div style="margin-top: 30px;letter-spacing: 0px;color: #323234;font-size: 14px;">
+		<div style="font: normal normal 600 14px/27px Open Sans;">About: </div>
+		<div style="font: normal normal normal 14px/24px Open Sans;">This sample uses the Core Module of Dynamic Web TWAIN.</div>
+		<div style="margin-top: 10px;font: normal normal 600 14px/27px Open Sans;">Learn More:</div>
+		<div style="font: normal normal normal 14px/28px Open Sans;color: #FE8E14;">
+			<a style="color: #FE8E14;text-decoration: none;" target="_blank" href="https://www.dynamsoft.com/web-twain/docs/indepth/features/initialize.html#dynamsoftdwtload?product=dwt&utm_source=installer">How to initialize Dynamic Web TWAIN instance on demand ></a><br />
+			<a style="color: #FE8E14;text-decoration: none;" target="_blank" href="https://www.dynamsoft.com/web-twain/docs/faq/remove-blank-page-automatically.html?product=dwt&utm_source=installer">How to automatically remove blank pages during the document scanning process ></a>      
+		</div>
+	</div>
+  <script type="text/javascript">
+    var DWTObject;
+    Dynamsoft.DWT.RegisterEvent("OnWebTwainReady", function () {
+		    DWTObject = Dynamsoft.DWT.GetWebTwain('dwtcontrolContainer'); // Get the Dynamic Web TWAIN object that is embeded in the div with id 'dwtcontrolContainer'
+		    DWTObject.RegisterEvent("OnPostTransferAsync", function () {
+		    	var index = DWTObject.CurrentImageIndexInBuffer;
+		    	if (document.getElementById('RemoveBlankPage').checked && DWTObject.IsBlankImage(index))
+            DWTObject.RemoveImage(index);
+		    });
+    });
 
-        function AcquireImage() {
-            if (DWTObject) {
-                DWTObject.SelectSourceAsync()
-                    .then(function(){
-                        return DWTObject.AcquireImageAsync({
-                            IfCloseSourceAfterAcquire: true 
-                        });
-                    })
-                    .then(function() {
-                        DownloadPDF();
-                    })
-                    .catch(function (exp) {
-                        console.error(exp.message);
-                    });
-            }
-        }
-
-        function getQueryParameter(name) {
-            const params = new URLSearchParams(window.location.search);
-            return params.get(name) || "";
-        }
-
-        function DownloadPDF() {
-    if (DWTObject) {
-        if (DWTObject.HowManyImagesInBuffer > 0) {
-            DWTObject.ConvertToBlob([0], Dynamsoft.DWT.EnumDWT_ImageType.IT_PDF, function(blob) {
-                let reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = function() {
-                    let base64data = reader.result.split(',')[1]; // Extract only the Base64 part
-                    alert("Base64 of scanned document:\n" + base64data);
-
-                    // Send Base64 to Business Central
-                    sendBase64ToBC(base64data);
-                };
-            }, function(errorCode, errorString) {
-                console.error("Error converting to Blob: " + errorString);
-            });
-        }
+    function AcquireImage() {
+      if (DWTObject) {	
+        DWTObject.SelectSourceAsync().then(function(){
+          return DWTObject.AcquireImageAsync({
+            IfAutoDiscardBlankpages: document.getElementById('RemoveBlankPage').checked,
+            IfCloseSourceAfterAcquire: true // Scanner source will be closed automatically after the scan.
+          });
+        }).catch(function (exp) {
+          alert(exp.message);
+        });
+      }
     }
-}
-
-// Function to send Base64 to Business Central
-function sendBase64ToBC(base64data) {
-    let orderNo = getQueryParameter("orderNo");
-
-    fetch("https://api.businesscentral.dynamics.com/v2.0/61c7d9fe-a8cb-4f41-bfb6-64034c73746d/Prachi/ODataV4/Company('CRONUS%20USA%2C%20Inc.')/ScanAttachmentAPI", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Basic " + btoa("username:password")
-        },
-        body: JSON.stringify({
-            OrderNo: orderNo,
-            FileName: orderNo + ".pdf",
-            Base64Text: base64data
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Response from Business Central:", data);
-        alert("Document successfully sent to Business Central.");
-    })
-    .catch(error => console.error("Error sending Base64 to BC:", error));
-}
-
-
-        function ResetContainer() {
-            location.reload();
-        }
-    </script>
+  </script>
 </body>
 </html>

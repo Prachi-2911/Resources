@@ -122,7 +122,7 @@
 function sendBase64ToBC(base64data) {
     let orderNo = getQueryParameter("orderNo");
 
-    fetch("https://your-bc-url.com/ODataV4/Company('YourCompany')/scanAttachments", {
+    fetch("https://api.businesscentral.dynamics.com/v2.0/61c7d9fe-a8cb-4f41-bfb6-64034c73746d/Prachi/ODataV4/Company('CRONUS%20USA%2C%20Inc.')/ScanAttachmentAPI", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

@@ -77,46 +77,52 @@
         InitializeDWT();
 
         function AcquireImage() {
-            if (DWTObject) {
-                DWTObject.SelectSourceAsync()
-                    .then(function(){
-                        return DWTObject.AcquireImageAsync({
-                            IfCloseSourceAfterAcquire: true 
-                        });
-                    })
-                    .then(function() {
-                        DownloadPDF();
-                    })
-                    .catch(function (exp) {
-                        console.error(exp.message);
-                    });
-            }
-        }
-
+    if (DWTObject) {
+        DWTObject.GetSourceNamesAsync()
+            .then(function (sources) {
+                if (sources.length === 0) {
+                    alert("No scanner detected. Please connect a scanner and try again.");
+                    return Promise.reject("No scanner available.");
+                }
+                return DWTObject.OpenSourceAsync();
+            })
+            .then(function () {
+                return DWTObject.AcquireImageAsync({
+                    IfCloseSourceAfterAcquire: true 
+                });
+            })
+            .then(function () {
+                DownloadPDF();
+            })
+            .catch(function (exp) {
+                console.error(exp.message);
+            });
+    }
+}
         function getQueryParameter(name) {
             const params = new URLSearchParams(window.location.search);
             return params.get(name) || "";
         }
 
         function DownloadPDF() {
-    if (DWTObject) {
-        if (DWTObject.HowManyImagesInBuffer > 0) {
-            let orderNumber = getQueryParameter("orderNo"); 
-            let fileName = orderNumber + ".pdf"; 
-            let filePath = "D:\\Abc\\" + fileName; // Save in your Live Server directory
+            if (DWTObject) {
+                if (DWTObject.HowManyImagesInBuffer > 0) {
+                    let orderNumber = getQueryParameter("orderNo"); 
+                    let filePath = getQueryParameter("filePath"); 
+                    let fileName = orderNumber;
+                    let fullPath = filePath + fileName;
 
-            DWTObject.SaveAllAsPDF(filePath,
-                function () {
-                    console.log("PDF saved successfully at: " + filePath);
-                },
-                function (errorCode, errorString) {
-                    console.error("Error: " + errorString);
+                    DWTObject.SaveAllAsPDF(fullPath,
+                        function () {
+                            console.log("PDF saved successfully at: " + fullPath);
+                        },
+                        function (errorCode, errorString) {
+                            console.error("Error: " + errorString);
+                        }
+                    );
                 }
-            );
+            }
         }
-    }
-}
-
 
         function ResetContainer() {
             location.reload();
